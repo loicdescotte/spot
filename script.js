@@ -25,35 +25,56 @@ class SpotifyStats {
     checkForToken() {
         console.log('🔍 Vérification du token...');
         
-        // 1. Vérifier s'il y a un code d'autorisation dans l'URL (Authorization Code flow)
-        const urlParams = new URLSearchParams(window.location.search);
-        const authCode = urlParams.get('code');
-        const error = urlParams.get('error');
-        
-        if (error) {
-            console.error('❌ Erreur OAuth:', error);
-            alert('Erreur de connexion Spotify: ' + error);
-            this.showOAuthInterface();
-            return;
-        }
-        
-        if (authCode) {
-            console.log('🔐 Code d\'autorisation trouvé, échange contre un token...');
-            this.exchangeCodeForToken(authCode);
-            return;
-        }
-        
-        // 2. Vérifier le localStorage
+        // 1. D'abord vérifier le localStorage (plus important)
         const savedToken = localStorage.getItem('spotify_token');
         if (savedToken && !savedToken.startsWith('BQDemo_')) {
             console.log('✅ Token trouvé dans localStorage:', savedToken.substring(0, 20) + '...');
             this.accessToken = savedToken;
             this.showUserInterface();
             this.loadUserData();
-        } else {
-            console.log('❌ Aucun token valide trouvé');
-            this.showOAuthInterface();
+            return;
         }
+        
+        // 2. Ensuite vérifier s'il y a des paramètres OAuth dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        const error = urlParams.get('error');
+        const state = urlParams.get('state');
+        const savedState = localStorage.getItem('oauth_state');
+        
+        // Vérifier que c'est bien notre tentative OAuth (avec state)
+        if ((authCode || error) && state && state === savedState) {
+            if (error) {
+                console.error('❌ Erreur OAuth:', error);
+                alert('Erreur de connexion Spotify: ' + error);
+                this.cleanUpOAuth();
+                this.showOAuthInterface();
+                return;
+            }
+            
+            if (authCode) {
+                console.log('🔐 Code d\'autorisation trouvé, échange contre un token...');
+                this.exchangeCodeForToken(authCode);
+                return;
+            }
+        }
+        
+        // 3. Nettoyer les paramètres OAuth non valides dans l'URL
+        if (urlParams.has('code') || urlParams.has('error')) {
+            console.log('🧹 Nettoyage des paramètres OAuth non valides...');
+            this.cleanUpOAuth();
+        }
+        
+        // 4. Afficher l'interface de connexion
+        console.log('❌ Aucun token valide trouvé');
+        this.showOAuthInterface();
+    }
+    
+    cleanUpOAuth() {
+        // Nettoyer l'URL et le localStorage
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        localStorage.removeItem('oauth_state');
     }
 
     showOAuthInterface() {

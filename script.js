@@ -1463,45 +1463,37 @@ class SpotifyStats {
             // Première passe : recherche pour tous les artistes
             const allEvents = [];
             
-            for (const artist of artists.slice(0, 15)) { // Plus d'artistes maintenant qu'on en a plus
-                try {
-                    // Tentative de récupération des vrais concerts via Bandsintown
-                    console.log(`🎭 Tentative de récupération de concerts réels pour ${artist.name}...`);
-                    
-                    const artistName = encodeURIComponent(artist.name);
-                    const bandsintownUrl = `https://rest.bandsintown.com/artists/${artistName}/events?app_id=spotify-stats-app&date=upcoming`;
-                    
-                    try {
-                        // Essai direct (ne fonctionnera pas à cause de CORS mais on teste)
-                        const response = await fetch(bandsintownUrl, {
-                            headers: {
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const events = await response.json();
-                            if (Array.isArray(events) && events.length > 0) {
-                                const eventsWithArtist = events.map(event => ({
-                                    ...event,
-                                    artistName: artist.name,
-                                    artistImage: artist.images[0]?.url
-                                }));
-                                
-                                allEvents.push(...eventsWithArtist);
-                                console.log(`🎤 ${events.length} concerts réels trouvés pour ${artist.name}`);
-                            }
-                        }
-                    } catch (corsError) {
-                        console.log(`❌ CORS bloque l'accès aux données de concerts pour ${artist.name}`);
-                        // Ne pas créer de faux concerts
-                    }
-                } catch (error) {
-                    console.log(`❌ Pas d'événements trouvés pour ${artist.name}:`, error.message);
-                }
+            for (const artist of artists.slice(0, 10)) { // Limiter le nombre d'artistes pour les liens
+                // Créer des liens directs vers les plateformes de concerts
+                console.log(`🎭 Création de liens de concerts pour ${artist.name}...`);
                 
-                // Petite pause pour éviter de surcharger l'API
-                await new Promise(resolve => setTimeout(resolve, 100));
+                const concertEvent = {
+                    artistName: artist.name,
+                    artistImage: artist.images[0]?.url,
+                    title: `Concerts de ${artist.name}`,
+                    venue: 'Plateformes de recherche',
+                    city: position.city || 'Votre région',
+                    country: position.country || '',
+                    date: 'À venir',
+                    description: `Trouvez les prochains concerts de ${artist.name} près de chez vous`,
+                    links: [
+                        {
+                            name: 'Bandsintown',
+                            url: `https://www.bandsintown.com/a/${encodeURIComponent(artist.name.toLowerCase().replace(/\s+/g, '-'))}`
+                        },
+                        {
+                            name: 'Songkick',
+                            url: `https://www.songkick.com/search?query=${encodeURIComponent(artist.name)}`
+                        },
+                        {
+                            name: 'Fnac Spectacles',
+                            url: `https://www.fnacspectacles.com/recherche/${encodeURIComponent(artist.name)}`
+                        }
+                    ]
+                };
+                
+                allEvents.push(concertEvent);
+                console.log(`🎤 Liens de concerts créés pour ${artist.name}`);
             }
             
             // Tri et filtrage intelligent selon la géolocalisation
@@ -1801,32 +1793,62 @@ class SpotifyStats {
         console.log(`🎪 Affichage de ${concerts.length} concerts trouvés`);
         
         container.innerHTML = concerts.map(concert => {
-            const concertDate = new Date(concert.date);
-            const isValidDate = !isNaN(concertDate.getTime());
-            
-            return `
-                <div class="concert-item">
-                    <div class="concert-title">🎤 ${concert.artist}</div>
-                    <div class="concert-details">
-                        📍 <strong>${concert.venue}</strong><br>
-                        🏙️ ${concert.city}${concert.country && concert.country !== 'FR' ? `, ${concert.country}` : ''}<br>
-                        🛣️ <span style="color: #1DB954; font-weight: 500;">${concert.distance}</span><br>
-                        📅 ${isValidDate ? concertDate.toLocaleDateString('fr-FR', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }) : 'Date à confirmer'}
-                        ${concert.description ? `<br><small style="color: #b3b3b3; font-style: italic;">${concert.description}</small>` : ''}
+            // Gestion du nouveau format avec liens multiples
+            if (concert.links && Array.isArray(concert.links)) {
+                const linksHtml = concert.links.map(link => 
+                    `<a href="${link.url}" target="_blank" style="color: #1DB954; text-decoration: none; padding: 6px 12px; border: 1px solid #1DB954; border-radius: 5px; display: inline-block; margin: 2px; font-size: 0.9em;">
+                        ${link.name}
+                    </a>`
+                ).join('');
+                
+                return `
+                    <div class="concert-item">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            ${concert.artistImage ? `<img src="${concert.artistImage}" alt="${concert.artistName}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">` : ''}
+                            <div class="concert-title">🎤 ${concert.artistName}</div>
+                        </div>
+                        <div class="concert-details">
+                            📍 <strong>${concert.venue}</strong><br>
+                            🏙️ ${concert.city}${concert.country ? `, ${concert.country}` : ''}<br>
+                            📅 ${concert.date}<br>
+                            ${concert.description ? `<small style="color: #b3b3b3; font-style: italic;">${concert.description}</small>` : ''}
+                        </div>
+                        <div class="concert-info" style="margin-top: 15px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                ${linksHtml}
+                            </div>
+                        </div>
                     </div>
-                    <div class="concert-info">
-                        <span>💰 ${concert.price}</span>
-                        <a href="${concert.link}" target="_blank" class="concert-link">🎫 Billets & Infos</a>
+                `;
+            } else {
+                // Format classique pour compatibilité
+                const concertDate = new Date(concert.date);
+                const isValidDate = !isNaN(concertDate.getTime());
+                
+                return `
+                    <div class="concert-item">
+                        <div class="concert-title">🎤 ${concert.artist || concert.artistName}</div>
+                        <div class="concert-details">
+                            📍 <strong>${concert.venue}</strong><br>
+                            🏙️ ${concert.city}${concert.country && concert.country !== 'FR' ? `, ${concert.country}` : ''}<br>
+                            ${concert.distance ? `🛣️ <span style="color: #1DB954; font-weight: 500;">${concert.distance}</span><br>` : ''}
+                            📅 ${isValidDate ? concertDate.toLocaleDateString('fr-FR', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) : 'Date à confirmer'}
+                            ${concert.description ? `<br><small style="color: #b3b3b3; font-style: italic;">${concert.description}</small>` : ''}
+                        </div>
+                        <div class="concert-info">
+                            ${concert.price ? `<span>💰 ${concert.price}</span>` : ''}
+                            <a href="${concert.link}" target="_blank" class="concert-link">🎫 Billets & Infos</a>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         }).join('');
     }
 

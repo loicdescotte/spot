@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 CLIENT_ID="f11e9cfe003449c686de1b52acdcfebe"
-REDIRECT_URI="https://httpbin.org/anything"
+REDIRECT_URI="https://loicdescotte.github.io/spot/"
 SCOPES="user-top-read user-read-private playlist-modify-public playlist-modify-private"
 
 echo "🎵 Générateur de Token Spotify Interactif"

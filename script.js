@@ -1,6 +1,6 @@
 // Configuration Spotify
 const SPOTIFY_CLIENT_ID = 'f11e9cfe003449c686de1b52acdcfebe'; // À remplacer par votre Client ID
-const SPOTIFY_REDIRECT_URI = 'https://localhost:8443/callback';
+const SPOTIFY_REDIRECT_URI = 'https://loicdescotte.github.io/spot/';
 const SPOTIFY_SCOPES = 'user-top-read user-read-private playlist-modify-public playlist-modify-private';
 
 class SpotifyStats {

@@ -194,13 +194,14 @@ class SpotifyStats {
             `;
             
             document.getElementById('user-info').style.display = 'flex';
-            document.getElementById('token-input-section').style.display = 'none';
+            document.getElementById('oauth-section').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
+            document.getElementById('oauth-loading').style.display = 'none';
             console.log('✅ Interface affichée avec succès');
         } catch (error) {
             console.error('❌ Erreur lors de la récupération du profil:', error);
             alert('Erreur de connexion Spotify. Vérifiez votre token.');
-            this.showTokenInput();
+            this.showOAuthInterface();
         }
     }
 

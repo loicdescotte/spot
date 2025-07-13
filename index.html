@@ -13,33 +13,16 @@
             <div id="auth-section">
                 <div id="oauth-section">
                     <h3>🎵 Connectez-vous à Spotify</h3>
-                    <p style="margin: 15px 0; opacity: 0.8;">Accédez à vos statistiques personnelles en toute sécurité</p>
+                    <p style="margin: 15px 0; opacity: 0.8;">Authentification sécurisée avec votre compte Spotify</p>
                     
-                    <!-- Mode recommandé : Token manuel -->
-                    <div style="background: rgba(29, 185, 84, 0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
-                        <h4 style="margin: 0 0 15px 0; color: #1DB954;">🚀 Méthode recommandée (simple et rapide)</h4>
-                        <p style="margin: 10px 0; font-size: 0.9rem;">1. Cliquez sur ce lien : <a href="https://developer.spotify.com/console/get-current-user/" target="_blank" style="color: #1DB954;">Spotify Console</a></p>
-                        <p style="margin: 10px 0; font-size: 0.9rem;">2. Cliquez sur "Get Token" puis copiez le token généré</p>
-                        <p style="margin: 10px 0; font-size: 0.9rem;">3. Collez-le ci-dessous :</p>
-                        <input type="text" id="spotify-token-input" placeholder="Collez votre token Spotify ici (BQA...)" style="width: 100%; max-width: 400px; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #1DB954; font-size: 1rem;">
-                        <br>
-                        <button onclick="connectWithToken()" style="background: #1DB954; color: white; padding: 12px 24px; margin: 10px 0; border-radius: 8px; border: none; font-size: 1rem; cursor: pointer;">🚀 Se connecter</button>
+                    <button onclick="loginWithSpotify()" id="spotify-login-btn" style="background: #1DB954; color: white; padding: 15px 30px; font-size: 1.1rem; margin: 15px; border-radius: 25px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);">
+                        🎵 Se connecter avec Spotify
+                    </button>
+                    
+                    <div id="oauth-loading" style="display: none; margin: 20px 0;">
+                        <div class="spinner"></div>
+                        <p>Connexion en cours...</p>
                     </div>
-                    
-                    <!-- Alternative OAuth -->
-                    <details style="margin-top: 20px; opacity: 0.8;">
-                        <summary style="cursor: pointer; font-size: 0.9rem;">🔧 Alternative : Authentification OAuth (plus complexe)</summary>
-                        <div style="margin: 15px 0;">
-                            <p style="font-size: 0.9rem; margin: 10px 0;">Cette méthode nécessite une configuration Spotify et plusieurs étapes.</p>
-                            <button onclick="loginWithSpotify()" id="spotify-login-btn" style="background: #1DB954; color: white; padding: 12px 24px; font-size: 1rem; margin: 10px 0; border-radius: 8px; border: none; cursor: pointer;">
-                                🎵 Se connecter avec OAuth
-                            </button>
-                            <div id="oauth-loading" style="display: none; margin: 20px 0;">
-                                <div class="spinner"></div>
-                                <p>Connexion en cours...</p>
-                            </div>
-                        </div>
-                    </details>
                 </div>
                 <div id="user-info" style="display: none;">
                     <span id="user-name"></span>

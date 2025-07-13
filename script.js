@@ -1754,27 +1754,9 @@ class SpotifyStats {
 }
 
 // Fonctions globales
-async function connectWithToken() {
-    const token = document.getElementById('spotify-token-input').value.trim();
-    
-    if (!token) {
-        alert('❌ Veuillez entrer un token');
-        return;
-    }
-    
-    // Nettoyer le localStorage des anciens modes
-    localStorage.removeItem('demo_mode');
-    localStorage.removeItem('demo_data');
-    
-    // Sauvegarder le token
-    localStorage.setItem('spotify_token', token);
-    
-    // Relancer l'application
-    location.reload();
-}
 
-// Fonction pour initier la connexion OAuth avec Spotify (flow implicit)
-function loginWithSpotify() {
+// Fonctions globales disponibles immédiatement
+window.loginWithSpotify = function() {
     console.log('🎵 Démarrage de la connexion OAuth Spotify (implicit flow)...');
     
     // Paramètres OAuth implicit flow
@@ -1793,10 +1775,9 @@ function loginWithSpotify() {
     // Rediriger vers Spotify
     console.log('🔗 Redirection vers:', authUrl.toString());
     window.location.href = authUrl.toString();
-}
+};
 
-// Fonction de déconnexion
-function logout() {
+window.logout = function() {
     localStorage.removeItem('spotify_token');
     localStorage.removeItem('oauth_state');
     // Nettoyer le cache de playlist
@@ -1804,12 +1785,29 @@ function logout() {
         window.spotifyStatsApp.cachedPlaylistId = null;
     }
     location.reload();
-}
+};
 
-// Garder la fonction pour le mode développeur
-function changeToken() {
-    logout();
-}
+window.connectWithToken = async function() {
+    const token = document.getElementById('spotify-token-input').value.trim();
+    
+    if (!token) {
+        alert('❌ Veuillez entrer un token');
+        return;
+    }
+    
+    // Nettoyer le localStorage des anciens modes
+    localStorage.removeItem('demo_mode');
+    localStorage.removeItem('demo_data');
+    
+    // Sauvegarder le token
+    localStorage.setItem('spotify_token', token);
+    
+    // Relancer l'application
+    location.reload();
+};
+
+// Alias pour compatibilité
+window.changeToken = window.logout;
 
 // Initialiser l'application
 document.addEventListener('DOMContentLoaded', () => {

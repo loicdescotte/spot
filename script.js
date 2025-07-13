@@ -1,7 +1,7 @@
 // Configuration Spotify
 const SPOTIFY_CLIENT_ID = 'f11e9cfe003449c686de1b52acdcfebe'; // À remplacer par votre Client ID
 const SPOTIFY_REDIRECT_URI = 'https://loicdescotte.github.io/spot/';
-const SPOTIFY_SCOPES = 'user-top-read user-read-private playlist-modify-public playlist-modify-private';
+const SPOTIFY_SCOPES = 'user-top-read user-read-private user-read-recently-played playlist-modify-public playlist-modify-private';
 
 class SpotifyStats {
     constructor() {
@@ -521,8 +521,11 @@ class SpotifyStats {
                 const data = await response.json();
                 console.log(`✅ ${data.items.length} titres récents récupérés`);
                 return data;
+            } else if (response.status === 403) {
+                console.warn('⚠️ Permissions insuffisantes pour l\'historique récent (scope user-read-recently-played requis)');
+                return { items: [] };
             } else {
-                console.warn('⚠️ Impossible de récupérer l\'historique récent');
+                console.warn('⚠️ Impossible de récupérer l\'historique récent:', response.status);
                 return { items: [] };
             }
         } catch (error) {
@@ -1900,6 +1903,7 @@ function base64urlEncode(array) {
 window.logout = function() {
     localStorage.removeItem('spotify_token');
     localStorage.removeItem('oauth_state');
+    localStorage.removeItem('code_verifier');
     // Nettoyer le cache de playlist
     if (window.spotifyStatsApp) {
         window.spotifyStatsApp.cachedPlaylistId = null;

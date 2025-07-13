@@ -2,9 +2,9 @@
 
 Une application web moderne pour analyser vos statistiques Spotify avec des recommandations intelligentes et des actualités musicales.
 
-## 🌐 Application en ligne
+## 🏠 Version de développement local
 
-**[👉 Accéder à l'application](https://loicdescotte.github.io/spot/)**
+Cette branche contient la version configurée pour le développement local.
 
 ## ✨ Fonctionnalités
 

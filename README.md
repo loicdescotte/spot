@@ -21,7 +21,7 @@ Une application web moderne pour analyser vos statistiques Spotify avec des reco
 2. **Créez une nouvelle application** ou utilisez une existante
 3. **Dans les paramètres de l'app** :
    - **Redirect URIs** : Ajoutez `https://loicdescotte.github.io/spot/`
-   - **⚠️ IMPORTANT** : Cochez **"Implicit Grant Flow"** dans les paramètres
+   - **⚠️ Note** : L'application utilise le flux PKCE (Authorization Code with PKCE), aucune configuration spéciale n'est nécessaire
 
 ### **2. Connexion**
 1. **Ouvrez** https://loicdescotte.github.io/spot/
@@ -34,7 +34,7 @@ Une application web moderne pour analyser vos statistiques Spotify avec des reco
 - **Frontend** : HTML5, CSS3, JavaScript vanilla
 - **APIs** : Spotify Web API, Google News RSS, Géolocalisation
 - **Déploiement** : GitHub Pages
-- **Authentification** : OAuth Spotify
+- **Authentification** : OAuth Spotify avec PKCE
 
 ## 📱 Captures d'écran
 

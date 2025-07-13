@@ -35,16 +35,15 @@ class SpotifyStats {
             return;
         }
         
-        // 2. Vérifier s'il y a un token dans l'URL hash (Implicit Grant Flow)
-        const hash = window.location.hash.substring(1);
-        const hashParams = new URLSearchParams(hash);
-        const accessToken = hashParams.get('access_token');
-        const error = hashParams.get('error');
-        const state = hashParams.get('state');
+        // 2. Vérifier s'il y a un code d'autorisation (PKCE flow)
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        const error = urlParams.get('error');
+        const state = urlParams.get('state');
         const savedState = localStorage.getItem('oauth_state');
         
         // Vérifier que c'est bien notre tentative OAuth (avec state)
-        if ((accessToken || error) && state && state === savedState) {
+        if ((authCode || error) && state && state === savedState) {
             if (error) {
                 console.error('❌ Erreur OAuth:', error);
                 alert('Erreur de connexion Spotify: ' + error);
@@ -53,22 +52,15 @@ class SpotifyStats {
                 return;
             }
             
-            if (accessToken) {
-                console.log('🔐 Token OAuth trouvé dans URL hash, sauvegarde...');
-                localStorage.setItem('spotify_token', accessToken);
-                this.accessToken = accessToken;
-                
-                // Nettoyer l'URL
-                this.cleanUpOAuth();
-                
-                this.showUserInterface();
-                this.loadUserData();
+            if (authCode) {
+                console.log('🔐 Code d\'autorisation trouvé, échange PKCE...');
+                this.exchangeCodeForTokenPKCE(authCode);
                 return;
             }
         }
         
         // 3. Nettoyer les paramètres OAuth non valides dans l'URL
-        if (window.location.hash.includes('access_token') || window.location.hash.includes('error')) {
+        if (urlParams.has('code') || urlParams.has('error')) {
             console.log('🧹 Nettoyage des paramètres OAuth non valides...');
             this.cleanUpOAuth();
         }
@@ -101,11 +93,62 @@ class SpotifyStats {
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
+    }
+    
+    async exchangeCodeForTokenPKCE(code) {
+        console.log('🔄 Échange du code via PKCE...');
+        document.getElementById('oauth-loading').style.display = 'block';
         
-        // Pré-remplir si un token existe déjà (pour le mode développeur)
-        const existingToken = localStorage.getItem('spotify_token');
-        if (existingToken && !existingToken.startsWith('BQDemo_')) {
-            document.getElementById('spotify-token-input').value = existingToken;
+        try {
+            const codeVerifier = localStorage.getItem('code_verifier');
+            if (!codeVerifier) {
+                throw new Error('Code verifier manquant');
+            }
+            
+            // Préparer les données pour l'échange
+            const tokenData = new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: SPOTIFY_REDIRECT_URI,
+                client_id: SPOTIFY_CLIENT_ID,
+                code_verifier: codeVerifier
+            });
+            
+            // Échanger le code contre un token
+            const response = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: tokenData
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Erreur ${response.status}: ${errorData.error_description || errorData.error}`);
+            }
+            
+            const tokenResponse = await response.json();
+            const accessToken = tokenResponse.access_token;
+            
+            console.log('✅ Token reçu via PKCE');
+            
+            // Sauvegarder le token
+            localStorage.setItem('spotify_token', accessToken);
+            this.accessToken = accessToken;
+            
+            // Nettoyer et rediriger
+            this.cleanUpOAuth();
+            localStorage.removeItem('code_verifier');
+            
+            this.showUserInterface();
+            this.loadUserData();
+            
+        } catch (error) {
+            console.error('❌ Erreur échange PKCE:', error);
+            alert(`Erreur lors de la connexion: ${error.message}`);
+            this.cleanUpOAuth();
+            this.showOAuthInterface();
         }
     }
     
@@ -1783,26 +1826,62 @@ class SpotifyStats {
 // Fonctions globales
 
 // Fonctions globales disponibles immédiatement
-window.loginWithSpotify = function() {
-    console.log('🎵 Démarrage de la connexion OAuth Spotify (implicit grant flow)...');
+window.loginWithSpotify = async function() {
+    console.log('🎵 Démarrage de la connexion OAuth Spotify (PKCE flow)...');
     
-    // Paramètres OAuth implicit grant flow
-    const authUrl = new URL('https://accounts.spotify.com/authorize');
-    authUrl.searchParams.append('client_id', SPOTIFY_CLIENT_ID);
-    authUrl.searchParams.append('response_type', 'token'); // Implicit grant flow
-    authUrl.searchParams.append('redirect_uri', SPOTIFY_REDIRECT_URI);
-    authUrl.searchParams.append('scope', SPOTIFY_SCOPES);
-    authUrl.searchParams.append('show_dialog', 'true');
-    
-    // Générer un état pour la sécurité
-    const state = Math.random().toString(36).substring(2, 15);
-    authUrl.searchParams.append('state', state);
-    localStorage.setItem('oauth_state', state);
-    
-    // Rediriger vers Spotify
-    console.log('🔗 Redirection vers:', authUrl.toString());
-    window.location.href = authUrl.toString();
+    try {
+        // Générer le code verifier et challenge pour PKCE
+        const codeVerifier = generateCodeVerifier();
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        
+        // Stocker le code verifier pour l'utiliser lors de l'échange
+        localStorage.setItem('code_verifier', codeVerifier);
+        
+        // Paramètres OAuth PKCE flow
+        const authUrl = new URL('https://accounts.spotify.com/authorize');
+        authUrl.searchParams.append('client_id', SPOTIFY_CLIENT_ID);
+        authUrl.searchParams.append('response_type', 'code'); // Authorization Code flow
+        authUrl.searchParams.append('redirect_uri', SPOTIFY_REDIRECT_URI);
+        authUrl.searchParams.append('scope', SPOTIFY_SCOPES);
+        authUrl.searchParams.append('code_challenge_method', 'S256');
+        authUrl.searchParams.append('code_challenge', codeChallenge);
+        authUrl.searchParams.append('show_dialog', 'true');
+        
+        // Générer un état pour la sécurité
+        const state = Math.random().toString(36).substring(2, 15);
+        authUrl.searchParams.append('state', state);
+        localStorage.setItem('oauth_state', state);
+        
+        // Rediriger vers Spotify
+        console.log('🔗 Redirection vers:', authUrl.toString());
+        window.location.href = authUrl.toString();
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la génération PKCE:', error);
+        alert('Erreur lors de l\'initialisation de la connexion OAuth');
+    }
 };
+
+// Fonctions utilitaires pour PKCE
+function generateCodeVerifier() {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return base64urlEncode(array);
+}
+
+async function generateCodeChallenge(codeVerifier) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return base64urlEncode(new Uint8Array(digest));
+}
+
+function base64urlEncode(array) {
+    return btoa(String.fromCharCode.apply(null, array))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
 
 window.logout = function() {
     localStorage.removeItem('spotify_token');

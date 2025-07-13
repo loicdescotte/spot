@@ -25,7 +25,33 @@ class SpotifyStats {
     checkForToken() {
         console.log('🔍 Vérification du token...');
         
-        // Vérifier le localStorage
+        // 1. Vérifier s'il y a un token dans l'URL fragment (implicit flow)
+        const hash = window.location.hash.substring(1);
+        const hashParams = new URLSearchParams(hash);
+        const accessToken = hashParams.get('access_token');
+        const error = hashParams.get('error');
+        
+        if (error) {
+            console.error('❌ Erreur OAuth:', error);
+            alert('Erreur de connexion Spotify: ' + error);
+            this.showOAuthInterface();
+            return;
+        }
+        
+        if (accessToken) {
+            console.log('🔐 Token OAuth trouvé dans URL, sauvegarde...');
+            localStorage.setItem('spotify_token', accessToken);
+            this.accessToken = accessToken;
+            
+            // Nettoyer l'URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            this.showUserInterface();
+            this.loadUserData();
+            return;
+        }
+        
+        // 2. Vérifier le localStorage
         const savedToken = localStorage.getItem('spotify_token');
         if (savedToken && !savedToken.startsWith('BQDemo_')) {
             console.log('✅ Token trouvé dans localStorage:', savedToken.substring(0, 20) + '...');
@@ -34,21 +60,29 @@ class SpotifyStats {
             this.loadUserData();
         } else {
             console.log('❌ Aucun token valide trouvé');
-            this.showTokenInput();
+            this.showOAuthInterface();
         }
     }
 
-    showTokenInput() {
-        document.getElementById('token-input-section').style.display = 'block';
+    showOAuthInterface() {
+        document.getElementById('oauth-section').style.display = 'block';
         document.getElementById('user-info').style.display = 'none';
         document.getElementById('main-content').style.display = 'none';
+        document.getElementById('oauth-loading').style.display = 'none';
         
-        // Pré-remplir si un token existe déjà
+        // Nettoyer l'URL des paramètres OAuth
+        if (window.location.search) {
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+        
+        // Pré-remplir si un token existe déjà (pour le mode développeur)
         const existingToken = localStorage.getItem('spotify_token');
         if (existingToken && !existingToken.startsWith('BQDemo_')) {
             document.getElementById('spotify-token-input').value = existingToken;
         }
     }
+    
 
 
     async showUserInterface() {
@@ -1739,13 +1773,42 @@ async function connectWithToken() {
     location.reload();
 }
 
-function changeToken() {
+// Fonction pour initier la connexion OAuth avec Spotify (flow implicit)
+function loginWithSpotify() {
+    console.log('🎵 Démarrage de la connexion OAuth Spotify (implicit flow)...');
+    
+    // Paramètres OAuth implicit flow
+    const authUrl = new URL('https://accounts.spotify.com/authorize');
+    authUrl.searchParams.append('client_id', SPOTIFY_CLIENT_ID);
+    authUrl.searchParams.append('response_type', 'token'); // Implicit flow
+    authUrl.searchParams.append('redirect_uri', SPOTIFY_REDIRECT_URI);
+    authUrl.searchParams.append('scope', SPOTIFY_SCOPES);
+    authUrl.searchParams.append('show_dialog', 'true');
+    
+    // Générer un état pour la sécurité (optionnel)
+    const state = Math.random().toString(36).substring(2, 15);
+    authUrl.searchParams.append('state', state);
+    localStorage.setItem('oauth_state', state);
+    
+    // Rediriger vers Spotify
+    console.log('🔗 Redirection vers:', authUrl.toString());
+    window.location.href = authUrl.toString();
+}
+
+// Fonction de déconnexion
+function logout() {
     localStorage.removeItem('spotify_token');
+    localStorage.removeItem('oauth_state');
     // Nettoyer le cache de playlist
     if (window.spotifyStatsApp) {
         window.spotifyStatsApp.cachedPlaylistId = null;
     }
     location.reload();
+}
+
+// Garder la fonction pour le mode développeur
+function changeToken() {
+    logout();
 }
 
 // Initialiser l'application

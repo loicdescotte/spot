@@ -42,44 +42,57 @@ class SpotifyStats {
         const state = urlParams.get('state');
         const savedState = localStorage.getItem('oauth_state');
         
-        // Vérifier que c'est bien notre tentative OAuth (avec state)
-        if ((authCode || error) && state && state === savedState) {
-            if (error) {
-                console.error('❌ Erreur OAuth:', error);
-                alert('Erreur de connexion Spotify: ' + error);
-                this.cleanUpOAuth();
-                this.showOAuthInterface();
-                return;
-            }
+        // Si on a des paramètres OAuth, vérifier qu'ils sont valides
+        if (authCode || error) {
+            console.log('🔍 Paramètres OAuth détectés:', { authCode: !!authCode, error, state, savedState });
             
-            if (authCode) {
-                console.log('🔐 Code d\'autorisation trouvé, échange PKCE...');
-                this.exchangeCodeForTokenPKCE(authCode);
-                return;
+            // Vérifier que c'est bien notre tentative OAuth (avec state)
+            if (state && state === savedState) {
+                if (error) {
+                    console.error('❌ Erreur OAuth:', error);
+                    if (error === 'unsupported_response_type') {
+                        console.log('🔧 Erreur de configuration OAuth détectée - nettoyage...');
+                    } else {
+                        alert('Erreur de connexion Spotify: ' + error);
+                    }
+                    this.cleanUpOAuth();
+                    this.showOAuthInterface();
+                    return;
+                }
+                
+                if (authCode) {
+                    console.log('🔐 Code d\'autorisation trouvé, échange PKCE...');
+                    this.exchangeCodeForTokenPKCE(authCode);
+                    return;
+                }
+            } else {
+                console.log('🧹 État OAuth non valide, nettoyage...');
+                this.cleanUpOAuth();
             }
         }
         
-        // 3. Nettoyer les paramètres OAuth non valides dans l'URL
-        if (urlParams.has('code') || urlParams.has('error')) {
-            console.log('🧹 Nettoyage des paramètres OAuth non valides...');
-            this.cleanUpOAuth();
-        }
-        
-        // 4. Afficher l'interface de connexion
+        // 3. Afficher l'interface de connexion
         console.log('❌ Aucun token valide trouvé');
         this.showOAuthInterface();
     }
     
     cleanUpOAuth() {
+        console.log('🧹 Nettoyage complet OAuth...');
+        
         // Nettoyer l'URL et le localStorage
         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        localStorage.removeItem('oauth_state');
         
-        // Supprimer le hash aussi
+        // Nettoyer le localStorage OAuth
+        localStorage.removeItem('oauth_state');
+        localStorage.removeItem('code_verifier');
+        
+        // Supprimer le hash aussi (au cas où il y aurait des restes d'ancien flow)
         if (window.location.hash) {
-            window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
+        
+        console.log('✅ Nettoyage OAuth terminé');
     }
 
     showOAuthInterface() {

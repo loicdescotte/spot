@@ -20,19 +20,18 @@ Une application web moderne pour analyser vos statistiques Spotify avec des reco
 - Allez sur [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 - Créez une nouvelle application ou utilisez une existante
 - Dans les **Redirect URIs**, ajoutez : `https://loicdescotte.github.io/spot/`
-- ⚠️ **Important** : Activez l'**Implicit Grant Flow** dans les paramètres de votre app
 
-### 2. **Connexion simple**
+### 2. **Connexion en 2 étapes**
 - Ouvrez https://loicdescotte.github.io/spot/
 - Cliquez sur **"Se connecter avec Spotify"**
-- Autorisez l'application dans la popup Spotify
-- C'est tout ! Vos statistiques s'affichent automatiquement
+- Autorisez l'application → Vous serez redirigé avec instructions
+- Suivez les étapes pour obtenir votre token et le coller
 
-### 3. **Mode développeur** (optionnel)
-Si vous préférez utiliser un token manuel :
+### 3. **Mode développeur** (recommandé)
+Pour une connexion directe :
 - Dépliez la section "Mode développeur"
 - Obtenez un token via [Spotify Console](https://developer.spotify.com/console/get-current-user/)
-- Collez-le dans le champ prévu
+- Cliquez sur "Get Token", copiez-le et collez-le dans l'application
 
 ## 🔧 Technologies
 

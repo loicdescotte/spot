@@ -25,11 +25,10 @@ class SpotifyStats {
     checkForToken() {
         console.log('🔍 Vérification du token...');
         
-        // 1. Vérifier s'il y a un token dans l'URL fragment (implicit flow)
-        const hash = window.location.hash.substring(1);
-        const hashParams = new URLSearchParams(hash);
-        const accessToken = hashParams.get('access_token');
-        const error = hashParams.get('error');
+        // 1. Vérifier s'il y a un code d'autorisation dans l'URL (Authorization Code flow)
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        const error = urlParams.get('error');
         
         if (error) {
             console.error('❌ Erreur OAuth:', error);
@@ -38,16 +37,9 @@ class SpotifyStats {
             return;
         }
         
-        if (accessToken) {
-            console.log('🔐 Token OAuth trouvé dans URL, sauvegarde...');
-            localStorage.setItem('spotify_token', accessToken);
-            this.accessToken = accessToken;
-            
-            // Nettoyer l'URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-            
-            this.showUserInterface();
-            this.loadUserData();
+        if (authCode) {
+            console.log('🔐 Code d\'autorisation trouvé, échange contre un token...');
+            this.exchangeCodeForToken(authCode);
             return;
         }
         
@@ -80,6 +72,47 @@ class SpotifyStats {
         const existingToken = localStorage.getItem('spotify_token');
         if (existingToken && !existingToken.startsWith('BQDemo_')) {
             document.getElementById('spotify-token-input').value = existingToken;
+        }
+    }
+    
+    async exchangeCodeForToken(code) {
+        console.log('🔄 Échange du code d\'autorisation contre un token...');
+        document.getElementById('oauth-loading').style.display = 'block';
+        
+        try {
+            // Pour GitHub Pages, on utilise un service public pour l'échange de tokens
+            // Alternative: rediriger vers Spotify Web Playback SDK ou utiliser un proxy
+            
+            console.warn('⚠️ Échange de code nécessite un client_secret côté serveur.');
+            console.log('🔧 Redirection vers le mode manuel...');
+            
+            // Afficher un message informatif à l'utilisateur
+            alert(`🎵 Authentification Spotify réussie !
+
+Cependant, l'échange automatique du code contre un token nécessite un serveur backend pour des raisons de sécurité.
+
+👇 Veuillez utiliser le mode développeur ci-dessous :
+1. Allez sur https://developer.spotify.com/console/get-current-user/
+2. Cliquez sur "Get Token" 
+3. Copiez le token généré
+4. Collez-le dans le champ ci-dessous`);
+            
+            // Nettoyer l'URL et afficher l'interface
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+            
+            this.showOAuthInterface();
+            
+            // Ouvrir automatiquement la section développeur
+            const details = document.querySelector('details');
+            if (details) {
+                details.open = true;
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'échange OAuth:', error);
+            alert('Erreur de connexion. Veuillez réessayer.');
+            this.showOAuthInterface();
         }
     }
     
@@ -1757,12 +1790,12 @@ class SpotifyStats {
 
 // Fonctions globales disponibles immédiatement
 window.loginWithSpotify = function() {
-    console.log('🎵 Démarrage de la connexion OAuth Spotify (implicit flow)...');
+    console.log('🎵 Démarrage de la connexion OAuth Spotify (authorization code flow)...');
     
-    // Paramètres OAuth implicit flow
+    // Paramètres OAuth authorization code flow
     const authUrl = new URL('https://accounts.spotify.com/authorize');
     authUrl.searchParams.append('client_id', SPOTIFY_CLIENT_ID);
-    authUrl.searchParams.append('response_type', 'token'); // Implicit flow
+    authUrl.searchParams.append('response_type', 'code'); // Authorization code flow
     authUrl.searchParams.append('redirect_uri', SPOTIFY_REDIRECT_URI);
     authUrl.searchParams.append('scope', SPOTIFY_SCOPES);
     authUrl.searchParams.append('show_dialog', 'true');

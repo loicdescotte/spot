@@ -1,0 +1,340 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1DB954, #191414);
+    min-height: 100vh;
+    color: #fff;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#auth-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+button {
+    background: #1DB954;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+}
+
+button:hover {
+    background: #1ed760;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+}
+
+#logout-btn {
+    background: #e22134;
+    box-shadow: 0 4px 15px rgba(226, 33, 52, 0.3);
+}
+
+#logout-btn:hover {
+    background: #ff4757;
+    box-shadow: 0 6px 20px rgba(226, 33, 52, 0.4);
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 10px;
+}
+
+.tab-btn {
+    background: transparent;
+    margin: 0 5px;
+    border-radius: 20px;
+    box-shadow: none;
+}
+
+.tab-btn.active {
+    background: #1DB954;
+    box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+}
+
+.tab-content {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.tab-content h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2rem;
+    color: #1DB954;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.stat-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(29, 185, 84, 0.2);
+}
+
+.stat-section h3 {
+    color: #1DB954;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.stat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #1DB954;
+    transform: translateX(5px);
+}
+
+.stat-item img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    margin-right: 15px;
+    object-fit: cover;
+}
+
+.stat-item-info {
+    flex: 1;
+}
+
+.stat-item-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.stat-item-details {
+    font-size: 0.85rem;
+    color: #b3b3b3;
+}
+
+.stat-item-rank {
+    background: #1DB954;
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-right: 15px;
+}
+
+.recommendations-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+#playlist-widget {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(29, 185, 84, 0.2);
+}
+
+#playlist-widget h3 {
+    color: #1DB954;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#spotify-embed {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(29, 185, 84, 0.3);
+    border-top: 4px solid #1DB954;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.genre-item {
+    background: rgba(29, 185, 84, 0.1);
+    border: 1px solid rgba(29, 185, 84, 0.3);
+    border-radius: 20px;
+    padding: 8px 16px;
+    margin: 4px;
+    display: inline-block;
+    font-size: 0.9rem;
+}
+
+.news-grid, .concerts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.news-section, .concerts-list {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(29, 185, 84, 0.2);
+}
+
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.news-item, .concert-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    border-left: 3px solid #1DB954;
+    transition: all 0.3s ease;
+}
+
+.news-item:hover, .concert-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.news-title, .concert-title {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.news-summary, .concert-details {
+    color: #b3b3b3;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.news-source, .concert-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.news-link, .concert-link {
+    color: #1DB954;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.news-link:hover, .concert-link:hover {
+    text-decoration: underline;
+}
+
+.location-info {
+    background: rgba(29, 185, 84, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #1DB954;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid, .news-grid, .concerts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .recommendations-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .tab-btn {
+        margin: 2px;
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+}

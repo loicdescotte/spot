@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Statistiques Spotify</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Mes Statistiques Spotify</h1>
+            <div id="auth-section">
+                <div id="token-input-section">
+                    <h3>🔑 Entrez votre token Spotify</h3>
+                    <input type="text" id="spotify-token-input" placeholder="Collez votre token Spotify ici (BQA...)" style="width: 400px; padding: 12px; margin: 10px; border-radius: 8px; border: none; font-size: 1rem;">
+                    <br>
+                    <button onclick="connectWithToken()" style="margin: 10px;">🚀 Se connecter</button>
+                </div>
+                <div id="user-info" style="display: none;">
+                    <span id="user-name"></span>
+                    <button onclick="changeToken()" style="background: #ff6b35; margin-left: 10px;">🔄 Changer Token</button>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content" style="display: none;">
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="recent">12 derniers mois</button>
+                <button class="tab-btn" data-tab="alltime">Depuis toujours</button>
+                <button class="tab-btn" data-tab="recommendations">Recommandations</button>
+                <button class="tab-btn" data-tab="news">News Musicales</button>
+                <button class="tab-btn" data-tab="concerts">Concerts</button>
+            </nav>
+
+            <div class="tab-content" id="recent-tab">
+                <h2>Vos statistiques des 12 derniers mois</h2>
+                <div class="stats-grid">
+                    <div class="stat-section">
+                        <h3>🎤 Top 10 Artistes</h3>
+                        <div id="recent-artists" class="stat-list"></div>
+                    </div>
+                    <div class="stat-section">
+                        <h3>🎵 Top 10 Titres</h3>
+                        <div id="recent-tracks" class="stat-list"></div>
+                    </div>
+                    <div class="stat-section">
+                        <h3>💿 Top 10 Albums</h3>
+                        <div id="recent-albums" class="stat-list"></div>
+                    </div>
+                    <div class="stat-section">
+                        <h3>🎭 Top 10 Genres</h3>
+                        <div id="recent-genres" class="stat-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="alltime-tab" style="display: none;">
+                <h2>Vos statistiques depuis toujours</h2>
+                <div class="stats-grid">
+                    <div class="stat-section">
+                        <h3>🎤 Top 10 Artistes</h3>
+                        <div id="alltime-artists" class="stat-list"></div>
+                    </div>
+                    <div class="stat-section">
+                        <h3>🎵 Top 10 Titres</h3>
+                        <div id="alltime-tracks" class="stat-list"></div>
+                    </div>
+                    <div class="stat-section">
+                        <h3>💿 Top 10 Albums</h3>
+                        <div id="alltime-albums" class="stat-list"></div>
+                    </div>
+                    <div class="stat-section">
+                        <h3>🎭 Top 10 Genres</h3>
+                        <div id="alltime-genres" class="stat-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="recommendations-tab" style="display: none;">
+                <h2>Recommandations pour vous</h2>
+                <div class="recommendations-section">
+                    <div id="recommendations-list" class="stat-list"></div>
+                    <div id="playlist-widget">
+                        <h3>🎶 Playlist Recommandée</h3>
+                        <div id="spotify-embed"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="news-tab" style="display: none;">
+                <h2>📰 News Musicales</h2>
+                <div id="news-loading" style="display: none;" class="loading">
+                    <div class="spinner"></div>
+                    <p>Recherche des dernières actualités...</p>
+                </div>
+                <div id="news-content" class="news-grid">
+                    <div class="news-section">
+                        <h3>🆕 Nouveaux Albums</h3>
+                        <div id="new-albums" class="news-list"></div>
+                    </div>
+                    <div class="news-section">
+                        <h3>📰 Actualités Artistes</h3>
+                        <div id="artist-news" class="news-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="concerts-tab" style="display: none;">
+                <h2>🎤 Concerts à Proximité</h2>
+                <div id="concerts-loading" style="display: none;" class="loading">
+                    <div class="spinner"></div>
+                    <p>Recherche des concerts près de chez vous...</p>
+                </div>
+                <div id="location-status" class="location-info"></div>
+                <div id="concerts-content" class="concerts-grid">
+                    <div id="concerts-list" class="concerts-list"></div>
+                </div>
+            </div>
+        </main>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Chargement de vos données Spotify...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

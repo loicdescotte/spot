@@ -205,14 +205,32 @@ class SpotifyStats {
         }
     }
 
+    async makeAuthenticatedRequest(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Authorization': `Bearer ${this.accessToken}`,
+                ...options.headers
+            }
+        });
+        
+        if (response.status === 401) {
+            console.warn('🔑 Token expiré, nettoyage et reconnexion...');
+            localStorage.removeItem('spotify_token');
+            localStorage.removeItem('oauth_state');
+            localStorage.removeItem('code_verifier');
+            alert('Votre session Spotify a expiré. Veuillez vous reconnecter.');
+            location.reload();
+            return;
+        }
+        
+        return response;
+    }
+
     async fetchUserProfile() {
         console.log('🔍 Test du token:', this.accessToken ? this.accessToken.substring(0, 20) + '...' : 'null');
         
-        const response = await fetch('https://api.spotify.com/v1/me', {
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`
-            }
-        });
+        const response = await this.makeAuthenticatedRequest('https://api.spotify.com/v1/me');
         
         console.log('📡 Réponse API:', response.status, response.statusText);
         
@@ -330,13 +348,8 @@ class SpotifyStats {
     }
 
     async fetchTopItems(type, timeRange, limit = 50) {
-        const response = await fetch(
-            `https://api.spotify.com/v1/me/top/${type}?time_range=${timeRange}&limit=${limit}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${this.accessToken}`
-                }
-            }
+        const response = await this.makeAuthenticatedRequest(
+            `https://api.spotify.com/v1/me/top/${type}?time_range=${timeRange}&limit=${limit}`
         );
         
         if (!response.ok) throw new Error(`Failed to fetch top ${type}`);
@@ -513,9 +526,7 @@ class SpotifyStats {
     async fetchRecentlyPlayed() {
         try {
             console.log('🕐 Récupération de l\'historique récent...');
-            const response = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50`, {
-                headers: { 'Authorization': `Bearer ${this.accessToken}` }
-            });
+            const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/me/player/recently-played?limit=50`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -586,9 +597,7 @@ class SpotifyStats {
         for (const artist of topArtists.slice(0, 3)) {
             try {
                 // Récupérer les artistes similaires
-                const response = await fetch(`https://api.spotify.com/v1/artists/${artist.id}/related-artists`, {
-                    headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                });
+                const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/artists/${artist.id}/related-artists`);
                 
                 if (!response.ok) continue;
                 
@@ -598,9 +607,7 @@ class SpotifyStats {
                 const newRelatedArtists = relatedData.artists.filter(a => !excludedArtistIds.has(a.id));
                 
                 for (const relatedArtist of newRelatedArtists.slice(0, 2)) {
-                    const tracksResponse = await fetch(`https://api.spotify.com/v1/artists/${relatedArtist.id}/top-tracks?market=FR`, {
-                        headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                    });
+                    const tracksResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/artists/${relatedArtist.id}/top-tracks?market=FR`);
                     
                     if (tracksResponse.ok) {
                         const tracksData = await tracksResponse.json();
@@ -647,26 +654,20 @@ class SpotifyStats {
         
         try {
             // Récupérer les catégories Spotify
-            const categoriesResponse = await fetch(`https://api.spotify.com/v1/browse/categories?limit=50&country=FR`, {
-                headers: { 'Authorization': `Bearer ${this.accessToken}` }
-            });
+            const categoriesResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/browse/categories?limit=50&country=FR`);
             
             if (categoriesResponse.ok) {
                 const categoriesData = await categoriesResponse.json();
                 
                 // Trouver des catégories qui matchent nos genres
                 for (const category of categoriesData.categories.items.slice(0, 5)) {
-                    const playlistsResponse = await fetch(`https://api.spotify.com/v1/browse/categories/${category.id}/playlists?limit=3&country=FR`, {
-                        headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                    });
+                    const playlistsResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/browse/categories/${category.id}/playlists?limit=3&country=FR`);
                     
                     if (playlistsResponse.ok) {
                         const playlistsData = await playlistsResponse.json();
                         
                         for (const playlist of playlistsData.playlists.items) {
-                            const tracksResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=10&market=FR`, {
-                                headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                            });
+                            const tracksResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=10&market=FR`);
                             
                             if (tracksResponse.ok) {
                                 const tracksData = await tracksResponse.json();
@@ -701,9 +702,7 @@ class SpotifyStats {
         for (const artist of topArtists) {
             try {
                 // Récupérer les albums de l'artiste
-                const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album,single&market=FR&limit=10`, {
-                    headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                });
+                const albumsResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album,single&market=FR&limit=10`);
                 
                 if (!albumsResponse.ok) continue;
                 
@@ -715,9 +714,7 @@ class SpotifyStats {
                     .slice(0, 2);
                 
                 for (const album of recentAlbums) {
-                    const tracksResponse = await fetch(`https://api.spotify.com/v1/albums/${album.id}/tracks?market=FR&limit=5`, {
-                        headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                    });
+                    const tracksResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/albums/${album.id}/tracks?market=FR&limit=5`);
                     
                     if (tracksResponse.ok) {
                         const tracksData = await tracksResponse.json();
@@ -959,9 +956,7 @@ class SpotifyStats {
             console.log(`🔍 Recherche playlist existante: "${playlistName}"`);
             
             // Utiliser l'endpoint /me/playlists qui est plus fiable
-            const response = await fetch(`https://api.spotify.com/v1/me/playlists?limit=50`, {
-                headers: { 'Authorization': `Bearer ${this.accessToken}` }
-            });
+            const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/me/playlists?limit=50`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -997,9 +992,7 @@ class SpotifyStats {
             console.log(`🗑️ Vidage de la playlist ${playlistId}...`);
             
             // Récupérer les tracks actuelles
-            const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-                headers: { 'Authorization': `Bearer ${this.accessToken}` }
-            });
+            const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -1009,10 +1002,9 @@ class SpotifyStats {
                     // Supprimer toutes les tracks
                     const uris = data.items.map(item => ({ uri: item.track.uri }));
                     
-                    const deleteResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                    const deleteResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
                         method: 'DELETE',
                         headers: {
-                            'Authorization': `Bearer ${this.accessToken}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ tracks: uris })
@@ -1035,10 +1027,9 @@ class SpotifyStats {
     }
 
     async createPlaylist(userId, name) {
-        const response = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+        const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/users/${userId}/playlists`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -1053,10 +1044,9 @@ class SpotifyStats {
     }
 
     async addTracksToPlaylist(playlistId, trackUris) {
-        const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+        const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -1125,9 +1115,7 @@ class SpotifyStats {
         // 1. Nouvelles sorties Spotify (baseline)
         for (const artist of artists.slice(0, 5)) {
             try {
-                const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album,single&market=FR&limit=3`, {
-                    headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                });
+                const albumsResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album,single&market=FR&limit=3`);
                 
                 if (albumsResponse.ok) {
                     const albumsData = await albumsResponse.json();
@@ -1303,9 +1291,7 @@ class SpotifyStats {
         
         for (const artist of artists.slice(0, 8)) {
             try {
-                const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album&market=FR&limit=2`, {
-                    headers: { 'Authorization': `Bearer ${this.accessToken}` }
-                });
+                const albumsResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album&market=FR&limit=2`);
                 
                 if (albumsResponse.ok) {
                     const albumsData = await albumsResponse.json();

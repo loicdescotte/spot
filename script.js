@@ -1510,12 +1510,12 @@ class SpotifyStats {
                 const concertEvent = {
                     artistName: artist.name,
                     artistImage: artist.images[0]?.url,
-                    title: `Concerts de ${artist.name}`,
-                    venue: 'Plateformes de recherche',
+                    title: `Rechercher concerts de ${artist.name}`,
+                    venue: 'Recherche sur plateformes',
                     city: position.city || 'Votre région',
                     country: position.country || '',
-                    date: 'À venir',
-                    description: `Trouvez les prochains concerts de ${artist.name} près de chez vous`,
+                    date: 'Dates à venir',
+                    description: `Cliquez sur les liens ci-dessous pour trouver les concerts de ${artist.name} près de chez vous`,
                     links: [
                         {
                             name: 'Bandsintown',
@@ -1536,11 +1536,9 @@ class SpotifyStats {
                 console.log(`🎤 Liens de concerts créés pour ${artist.name}`);
             }
             
-            // Tri et filtrage intelligent selon la géolocalisation
-            const sortedEvents = this.sortEventsByRelevance(allEvents, position);
-            concerts = this.selectConcertsByProximity(sortedEvents, position);
-            
-            console.log(`🎪 ${concerts.length} concerts sélectionnés`);
+            // Retourner directement les liens de recherche (pas de filtrage géographique sur des liens)
+            concerts = allEvents;
+            console.log(`🎪 ${concerts.length} liens de recherche de concerts créés`);
             
         } catch (error) {
             console.error('❌ Erreur récupération concerts:', error);

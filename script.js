@@ -1453,33 +1453,29 @@ class SpotifyStats {
                         const venue = template.venues[Math.floor(Math.random() * template.venues.length)];
                         const city = template.cities[Math.floor(Math.random() * template.cities.length)];
                         
-                        // Générer une date future plausible
-                        const futureDate = new Date();
-                        futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 180) + 30);
-                        
                         concertNews.push({
                             artist: artist.name,
                             artistImage: artist.images[0]?.url,
                             title: template.title,
                             description: template.description,
-                            venue: venue,
-                            city: city,
-                            date: futureDate.toLocaleDateString('fr-FR', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                            }),
                             type: template.type,
-                            url: `https://www.bandsintown.com/a/${encodeURIComponent(artist.name.toLowerCase().replace(/\s+/g, '-'))}`,
-                            searchLinks: [
+                            // Liens vers des sites d'actualités musicales français
+                            newsLinks: [
                                 {
-                                    name: 'Fnac Spectacles',
-                                    url: `https://www.fnacspectacles.com/recherche/${encodeURIComponent(artist.name)}`
+                                    name: 'Les Inrocks',
+                                    url: `https://www.lesinrocks.com/recherche/?q=${encodeURIComponent(artist.name + ' concert')}`
                                 },
                                 {
-                                    name: 'Ticketmaster',
-                                    url: `https://www.ticketmaster.fr/search?q=${encodeURIComponent(artist.name)}`
+                                    name: 'Rolling Stone France',
+                                    url: `https://www.rollingstone.fr/?s=${encodeURIComponent(artist.name + ' tournée')}`
+                                },
+                                {
+                                    name: 'Magic RPM',
+                                    url: `https://www.magicrpm.com/?s=${encodeURIComponent(artist.name + ' concert france')}`
+                                },
+                                {
+                                    name: 'Rock & Folk',
+                                    url: `https://www.rocknfolk.com/?s=${encodeURIComponent(artist.name + ' live')}`
                                 }
                             ]
                         });
@@ -1496,8 +1492,8 @@ class SpotifyStats {
             }
         }
         
-        // Trier par date
-        concertNews.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Mélanger pour varier l'affichage
+        concertNews.sort(() => Math.random() - 0.5);
         
         console.log(`🎪 ${concertNews.length} actualités concert générées`);
         return concertNews;
@@ -1985,11 +1981,11 @@ class SpotifyStats {
         console.log(`🎪 Affichage de ${concerts.length} actualités concerts`);
         
         container.innerHTML = concerts.map(concert => {
-            // Gestion du format actualités concerts
-            if (concert.searchLinks && Array.isArray(concert.searchLinks)) {
-                const linksHtml = concert.searchLinks.map(link => 
+            // Gestion du format actualités concerts avec liens d'articles
+            if (concert.newsLinks && Array.isArray(concert.newsLinks)) {
+                const linksHtml = concert.newsLinks.map(link => 
                     `<a href="${link.url}" target="_blank" style="color: #1DB954; text-decoration: none; padding: 6px 12px; border: 1px solid #1DB954; border-radius: 5px; display: inline-block; margin: 2px; font-size: 0.9em;">
-                        🎫 ${link.name}
+                        📰 ${link.name}
                     </a>`
                 ).join('');
                 
@@ -2003,17 +1999,12 @@ class SpotifyStats {
                                     <span style="background: rgba(29, 185, 84, 0.8); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 10px;">${concert.type}</span>
                                 </div>
                                 
-                                <div style="margin-bottom: 10px;">
+                                <div style="margin-bottom: 15px;">
                                     <p style="color: #666; margin: 5px 0; font-size: 0.95em;">${concert.description}</p>
                                 </div>
                                 
-                                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 0.9em; color: #888;">
-                                    <span><strong>📅</strong> ${concert.date}</span>
-                                    <span><strong>📍</strong> ${concert.venue}, ${concert.city}</span>
-                                </div>
-                                
                                 <div style="margin-top: 15px;">
-                                    <p style="margin-bottom: 8px; font-size: 0.9em; color: #666;">Billetterie :</p>
+                                    <p style="margin-bottom: 8px; font-size: 0.9em; color: #666;">Rechercher dans la presse musicale :</p>
                                     ${linksHtml}
                                 </div>
                             </div>

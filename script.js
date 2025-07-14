@@ -1412,7 +1412,13 @@ class SpotifyStats {
     async getUserLocation() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error('Géolocalisation non supportée'));
+                console.warn('⚠️ Géolocalisation non supportée, utilisation position par défaut');
+                resolve({
+                    latitude: 48.8566,
+                    longitude: 2.3522,
+                    city: 'Paris',
+                    country: 'France'
+                });
                 return;
             }
             
@@ -1426,17 +1432,33 @@ class SpotifyStats {
                         resolve({
                             latitude: position.coords.latitude,
                             longitude: position.coords.longitude,
-                            city: data.city || data.locality || 'Votre ville'
+                            city: data.city || data.locality || 'Votre ville',
+                            country: data.countryName || 'France'
                         });
                     } catch (error) {
                         resolve({
                             latitude: position.coords.latitude,
                             longitude: position.coords.longitude,
-                            city: 'Votre ville'
+                            city: 'Votre ville',
+                            country: 'France'
                         });
                     }
                 },
-                (error) => reject(error)
+                (error) => {
+                    console.warn('⚠️ Erreur géolocalisation:', error.message, 'Utilisation position par défaut');
+                    // Fallback vers Paris si géolocalisation échoue
+                    resolve({
+                        latitude: 48.8566,
+                        longitude: 2.3522,
+                        city: 'Paris',
+                        country: 'France'
+                    });
+                },
+                {
+                    timeout: 10000,
+                    enableHighAccuracy: false,
+                    maximumAge: 300000
+                }
             );
         });
     }

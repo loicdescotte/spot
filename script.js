@@ -1397,121 +1397,47 @@ class SpotifyStats {
     }
 
     async fetchConcertNews(artists) {
-        console.log('🎤 Recherche d\'actualités de concerts...');
+        console.log('🎤 Recherche d\'actualités concerts...');
         const concertNews = [];
         
-        // Mots-clés pour les concerts
-        const concertKeywords = ['concert', 'tournée', 'live', 'festival', 'tour', 'dates'];
+        // Mots-clés pour filtrer les articles de concerts
+        const concertKeywords = ['concert', 'tournée', 'live', 'festival', 'tour', 'dates', 'scène', 'spectacle'];
         
-        for (const artist of artists.slice(0, 6)) {
+        // Utiliser le même système que fetchMusicNews mais filtrer pour les concerts
+        for (const artist of artists.slice(0, 5)) {
             try {
-                console.log(`🔍 Recherche actualités pour ${artist.name}...`);
+                console.log(`🔍 Recherche actualités concerts pour ${artist.name}...`);
                 
-                // Rechercher des articles via Google News (simulation avec NewsAPI ou RSS)
-                const articles = await this.searchConcertArticles(artist.name);
+                // Utiliser la même méthode que les news musicales
+                const newsResults = await this.fetchGoogleNews(artist.name + ' concert');
                 
-                for (const article of articles) {
-                    // Vérifier si l'article parle vraiment de concerts
+                // Filtrer pour ne garder que les articles qui parlent de concerts
+                const concertArticles = newsResults.filter(article => {
                     const title = article.title.toLowerCase();
-                    const description = (article.description || '').toLowerCase();
-                    const content = title + ' ' + description;
+                    const summary = (article.summary || '').toLowerCase();
+                    const content = title + ' ' + summary;
                     
-                    const hasConcertKeyword = concertKeywords.some(keyword => 
-                        content.includes(keyword)
-                    );
-                    
-                    if (hasConcertKeyword) {
-                        concertNews.push({
-                            artist: artist.name,
-                            artistImage: artist.images[0]?.url,
-                            title: article.title,
-                            description: article.description || article.content || '',
-                            type: 'Article',
-                            source: article.source,
-                            publishedAt: article.publishedAt,
-                            url: article.url,
-                            originalUrl: article.url
-                        });
-                        
-                        console.log(`✅ Article concert trouvé pour ${artist.name}: ${article.title}`);
-                    }
-                }
+                    return concertKeywords.some(keyword => content.includes(keyword));
+                });
                 
-                // Attendre entre les appels pour éviter la limitation
-                await new Promise(resolve => setTimeout(resolve, 300));
+                concertNews.push(...concertArticles);
+                console.log(`🎤 ${concertArticles.length} articles concerts trouvés pour ${artist.name}`);
+                
+                // Petite pause pour éviter rate limiting
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
             } catch (error) {
-                console.warn(`⚠️ Erreur recherche pour ${artist.name}:`, error.message);
+                console.log(`❌ Pas de news concerts pour ${artist.name}:`, error.message);
             }
         }
         
-        // Trier par date de publication (plus récent en premier)
-        concertNews.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+        // Trier par date (plus récent en premier) et limiter
+        const sortedNews = concertNews
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 8);
         
-        console.log(`📰 ${concertNews.length} articles de concerts trouvés`);
-        return concertNews.slice(0, 10); // Limiter à 10 articles
-    }
-
-    async searchConcertArticles(artistName) {
-        try {
-            // Utiliser NewsAPI via un proxy CORS ou service gratuit
-            const query = `${artistName} concert OR tournée OR live OR festival`;
-            
-            // Essayer d'abord avec NewsAPI via un proxy public
-            try {
-                const response = await fetch(
-                    `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=fr&sortBy=publishedAt&pageSize=5&apiKey=demo`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (compatible; SpotifyStatsApp/1.0)'
-                        }
-                    }
-                );
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    return (data.articles || []).map(article => ({
-                        title: article.title,
-                        description: article.description,
-                        url: article.url,
-                        source: article.source?.name || 'Source inconnue',
-                        publishedAt: article.publishedAt
-                    }));
-                }
-            } catch (error) {
-                console.warn('NewsAPI non disponible:', error.message);
-            }
-            
-            // Fallback : recherche simulée avec des sources connues
-            return this.simulateArticleSearch(artistName);
-            
-        } catch (error) {
-            console.error('Erreur recherche articles:', error);
-            return [];
-        }
-    }
-
-    simulateArticleSearch(artistName) {
-        // En attendant une vraie API, générer des liens de recherche vers de vrais sites
-        const searchTemplates = [
-            {
-                title: `Rechercher "${artistName} concert" sur Les Inrocks`,
-                description: `Actualités et critiques concerts de ${artistName}`,
-                url: `https://www.lesinrocks.com/recherche/?q=${encodeURIComponent(artistName + ' concert')}`,
-                source: 'Les Inrocks',
-                publishedAt: new Date().toISOString()
-            },
-            {
-                title: `Rechercher "${artistName} tournée" sur Rolling Stone`,
-                description: `Infos tournées et dates de concerts ${artistName}`,
-                url: `https://www.rollingstone.fr/?s=${encodeURIComponent(artistName + ' tournée')}`,
-                source: 'Rolling Stone France',
-                publishedAt: new Date().toISOString()
-            }
-        ];
-        
-        return searchTemplates;
+        console.log(`📰 ${sortedNews.length} articles concerts finaux`);
+        return sortedNews;
     }
 
     async getUserLocation() {
@@ -1996,7 +1922,69 @@ class SpotifyStats {
         console.log(`🎪 Affichage de ${concerts.length} actualités concerts`);
         
         container.innerHTML = concerts.map(concert => {
-            // Gestion des vrais articles de concerts
+            // Format identique aux news musicales
+            const formattedDate = concert.date ? 
+                new Date(concert.date).toLocaleDateString('fr-FR', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                }) : '';
+            
+            return `
+                <div class="news-item" style="background: linear-gradient(135deg, rgba(29, 185, 84, 0.1), rgba(30, 215, 96, 0.05)); border: 1px solid rgba(29, 185, 84, 0.2); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        ${concert.image ? `<img src="${concert.image}" alt="Concert" style="width: 60px; height: 60px; border-radius: 10px; object-fit: cover; flex-shrink: 0;">` : '<div style="width: 60px; height: 60px; background: rgba(29, 185, 84, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><span style="font-size: 24px;">🎤</span></div>'}
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <h3 style="margin: 0; color: #1DB954; font-size: 1.1em; line-height: 1.2;">${concert.title}</h3>
+                                <span style="background: rgba(29, 185, 84, 0.8); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; white-space: nowrap; margin-left: 10px;">${concert.type || 'Concert'}</span>
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <p style="color: #666; margin: 5px 0; font-size: 0.95em; line-height: 1.4;">${concert.summary}</p>
+                            </div>
+                            
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; font-size: 0.85em; color: #888;">
+                                <span><strong>📰</strong> ${concert.source}</span>
+                                ${formattedDate ? `<span><strong>📅</strong> ${formattedDate}</span>` : ''}
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <a href="${concert.link}" target="_blank" style="background: #1DB954; color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 0.9em; transition: background 0.2s;">
+                                    📖 Lire l'article
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    displayConcertsError() {
+        document.getElementById('concerts-list').innerHTML = '<p>❌ Erreur lors du chargement des actualités concerts.</p>';
+    }
+
+    displayOldConcerts(concerts) {
+        const container = document.getElementById('concerts-list');
+        
+        if (!concerts || concerts.length === 0) {
+            console.error('❌ Aucun concert/lien généré - debug nécessaire');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <p>🚫 Aucune actualité de concerts trouvée</p>
+                    <p style="font-size: 0.9em; margin: 20px 0;">
+                        Aucun article récent trouvé concernant les concerts de vos artistes favoris.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+        
+        console.log(`🎪 Affichage de ${concerts.length} actualités concerts`);
+        
+        container.innerHTML = concerts.map(concert => {
+            // Ancien format avec liens de recherche (si utilisé)
             if (concert.url && concert.originalUrl) {
                 const publishedDate = concert.publishedAt ? 
                     new Date(concert.publishedAt).toLocaleDateString('fr-FR', { 
@@ -2034,6 +2022,9 @@ class SpotifyStats {
                     </div>
                 `;
             }
+            
+            // Gestion du format actualités concerts avec liens d'articles (fallback)
+            if (concert.newsLinks && Array.isArray(concert.newsLinks)) {
             
             // Gestion du format actualités concerts avec liens d'articles (fallback)
             if (concert.newsLinks && Array.isArray(concert.newsLinks)) {

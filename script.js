@@ -1400,102 +1400,39 @@ class SpotifyStats {
         console.log('🎤 Recherche d\'actualités de concerts...');
         const concertNews = [];
         
-        // Mots-clés pour identifier les articles de concerts
-        const concertKeywords = [
-            'concert', 'tournée', 'tour', 'live', 'festival', 'scène', 'spectacle',
-            'france', 'paris', 'lyon', 'marseille', 'toulouse', 'nice', 'nantes',
-            'strasbourg', 'montpellier', 'bordeaux', 'lille', 'rennes', 'reims',
-            'dates', 'billetterie', 'zénith', 'olympia', 'bataclan', 'trabendo'
-        ];
-        
-        // Générer des actualités de concerts simulées basées sur les vraies sorties
-        for (const artist of artists.slice(0, 8)) {
-            try {
-                // Récupérer les albums récents pour voir si l'artiste est actif
-                const albumsResponse = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album,single&market=FR&limit=2`);
-                
-                if (albumsResponse.ok) {
-                    const albumsData = await albumsResponse.json();
-                    const recentAlbums = albumsData.items.filter(album => {
-                        const releaseDate = new Date(album.release_date);
-                        const sixMonthsAgo = new Date();
-                        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-                        return releaseDate > sixMonthsAgo;
-                    });
-                    
-                    // Si l'artiste a sorti quelque chose récemment, générer des infos concert
-                    if (recentAlbums.length > 0 || Math.random() > 0.4) {
-                        const concertTemplates = [
-                            {
-                                title: `${artist.name} annonce une tournée française`,
-                                description: `Après le succès de ses derniers albums, ${artist.name} revient sur scène en France pour une série de concerts exceptionnels.`,
-                                type: 'Tournée annoncée',
-                                venues: ['Zénith de Paris', 'Olympia', 'Bataclan', 'Zénith de Lyon', 'Salle Pleyel'],
-                                cities: ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nantes', 'Strasbourg']
-                            },
-                            {
-                                title: `${artist.name} en concert à Paris`,
-                                description: `Une date exclusive à ne pas manquer ! ${artist.name} se produira exceptionnellement en France.`,
-                                type: 'Concert confirmé',
-                                venues: ['L\'Olympia', 'Le Bataclan', 'La Cigale', 'Le Trianon'],
-                                cities: ['Paris']
-                            },
-                            {
-                                title: `Festival d'été : ${artist.name} en tête d'affiche`,
-                                description: `${artist.name} sera l'une des têtes d'affiche des festivals français de cet été.`,
-                                type: 'Festival',
-                                venues: ['Festival des Vieilles Charrues', 'Hellfest', 'Rock en Seine', 'Festival de Nîmes'],
-                                cities: ['Carhaix', 'Clisson', 'Paris', 'Nîmes']
-                            }
-                        ];
-                        
-                        const template = concertTemplates[Math.floor(Math.random() * concertTemplates.length)];
-                        const venue = template.venues[Math.floor(Math.random() * template.venues.length)];
-                        const city = template.cities[Math.floor(Math.random() * template.cities.length)];
-                        
-                        concertNews.push({
-                            artist: artist.name,
-                            artistImage: artist.images[0]?.url,
-                            title: template.title,
-                            description: template.description,
-                            type: template.type,
-                            // Liens vers des sites d'actualités musicales français
-                            newsLinks: [
-                                {
-                                    name: 'Les Inrocks',
-                                    url: `https://www.lesinrocks.com/recherche/?q=${encodeURIComponent(artist.name + ' concert')}`
-                                },
-                                {
-                                    name: 'Rolling Stone France',
-                                    url: `https://www.rollingstone.fr/?s=${encodeURIComponent(artist.name + ' tournée')}`
-                                },
-                                {
-                                    name: 'Magic RPM',
-                                    url: `https://www.magicrpm.com/?s=${encodeURIComponent(artist.name + ' concert france')}`
-                                },
-                                {
-                                    name: 'Rock & Folk',
-                                    url: `https://www.rocknfolk.com/?s=${encodeURIComponent(artist.name + ' live')}`
-                                }
-                            ]
-                        });
-                        
-                        console.log(`🎤 Info concert générée pour ${artist.name}`);
-                    }
+        // Pour l'instant, afficher un message d'information simple
+        // plutôt que de générer de fausses actualités
+        concertNews.push({
+            artist: 'Information',
+            title: 'Recherche d\'actualités concerts',
+            description: 'Pour trouver les dernières actualités sur les concerts et tournées de vos artistes favoris, utilisez les liens ci-dessous vers les sites de presse musicale française.',
+            type: 'Info',
+            // Liens vers des sites d'actualités musicales français généraux
+            newsLinks: [
+                {
+                    name: 'Les Inrocks - Concerts',
+                    url: 'https://www.lesinrocks.com/tag/concerts/'
+                },
+                {
+                    name: 'Rolling Stone France - Live',
+                    url: 'https://www.rollingstone.fr/category/live/'
+                },
+                {
+                    name: 'Magic RPM - Concerts',
+                    url: 'https://www.magicrpm.com/category/concerts/'
+                },
+                {
+                    name: 'Rock & Folk - Live',
+                    url: 'https://www.rocknfolk.com/category/live/'
+                },
+                {
+                    name: 'Musik Please - Actualités',
+                    url: 'https://musikplease.com/category/actualites/'
                 }
-                
-                // Attendre un peu entre les appels
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-            } catch (error) {
-                console.warn(`⚠️ Erreur pour ${artist.name}:`, error.message);
-            }
-        }
+            ]
+        });
         
-        // Mélanger pour varier l'affichage
-        concertNews.sort(() => Math.random() - 0.5);
-        
-        console.log(`🎪 ${concertNews.length} actualités concert générées`);
+        console.log(`📰 ${concertNews.length} section d'actualités concert créée`);
         return concertNews;
     }
 

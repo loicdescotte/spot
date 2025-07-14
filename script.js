@@ -942,32 +942,60 @@ class SpotifyStats {
         try {
             console.log(`🔍 Recherche playlist existante: "${playlistName}"`);
             
-            // Utiliser l'endpoint /me/playlists qui est plus fiable
-            const response = await this.makeAuthenticatedRequest(`https://api.spotify.com/v1/me/playlists?limit=50`);
+            // Rechercher dans toutes les playlists (pagination possible)
+            let allPlaylists = [];
+            let nextUrl = `https://api.spotify.com/v1/me/playlists?limit=50`;
             
-            if (response.ok) {
-                const data = await response.json();
-                console.log(`📋 ${data.items.length} playlists trouvées`);
+            while (nextUrl) {
+                const response = await this.makeAuthenticatedRequest(nextUrl);
                 
-                // Recherche plus flexible - priorité au nom, puis vérification du propriétaire
-                const existingPlaylist = data.items.find(playlist => {
-                    const nameMatch = playlist.name === playlistName;
-                    const isOwner = playlist.owner.id === userId;
-                    console.log(`🔍 Playlist "${playlist.name}": nom=${nameMatch}, propriétaire=${isOwner} (${playlist.owner.id} vs ${userId})`);
-                    return nameMatch && isOwner;
-                }) || data.items.find(playlist => playlist.name === playlistName); // Fallback: chercher juste par nom
-                
-                if (existingPlaylist) {
-                    console.log(`✅ Playlist trouvée: ${existingPlaylist.name} (ID: ${existingPlaylist.id})`);
-                    return existingPlaylist;
+                if (response.ok) {
+                    const data = await response.json();
+                    allPlaylists.push(...data.items);
+                    nextUrl = data.next; // URL pour la page suivante, null si dernière page
+                    console.log(`📋 ${data.items.length} playlists récupérées, total: ${allPlaylists.length}`);
                 } else {
-                    console.log(`❌ Aucune playlist "${playlistName}" trouvée`);
-                    // Debug: afficher les noms des playlists existantes
-                    console.log('Playlists existantes:', data.items.map(p => p.name).slice(0, 10));
+                    console.error('❌ Erreur API playlists:', response.status, response.statusText);
+                    break;
                 }
-            } else {
-                console.error('❌ Erreur API playlists:', response.status, response.statusText);
             }
+            
+            console.log(`📋 Total: ${allPlaylists.length} playlists à analyser`);
+            
+            // Recherche plus robuste
+            const exactMatch = allPlaylists.find(playlist => {
+                const nameMatch = playlist.name === playlistName;
+                const isOwner = playlist.owner.id === userId;
+                if (nameMatch) {
+                    console.log(`🔍 Playlist exacte "${playlist.name}": propriétaire=${isOwner} (${playlist.owner.id} vs ${userId})`);
+                }
+                return nameMatch && isOwner;
+            });
+            
+            if (exactMatch) {
+                console.log(`✅ Playlist trouvée (correspondance exacte): ${exactMatch.name} (ID: ${exactMatch.id})`);
+                return exactMatch;
+            }
+            
+            // Fallback: chercher juste par nom (même si pas propriétaire)
+            const nameOnlyMatch = allPlaylists.find(playlist => playlist.name === playlistName);
+            if (nameOnlyMatch) {
+                console.log(`⚠️ Playlist trouvée mais pas propriétaire: ${nameOnlyMatch.name} (propriétaire: ${nameOnlyMatch.owner.display_name})`);
+                return nameOnlyMatch; // On peut quand même l'utiliser
+            }
+            
+            console.log(`❌ Aucune playlist "${playlistName}" trouvée`);
+            // Debug: afficher toutes les playlists qui contiennent "Recommandations" ou "Claude"
+            const similarPlaylists = allPlaylists.filter(p => 
+                p.name.toLowerCase().includes('recommandations') || 
+                p.name.toLowerCase().includes('claude')
+            );
+            if (similarPlaylists.length > 0) {
+                console.log('🔍 Playlists similaires trouvées:', similarPlaylists.map(p => `"${p.name}" (${p.owner.display_name})`));
+            }
+            
+            // Afficher les 10 premières playlists pour debug
+            console.log('📋 Premières playlists:', allPlaylists.slice(0, 10).map(p => `"${p.name}" (${p.owner.display_name})`));
         } catch (error) {
             console.error('❌ Erreur recherche playlist:', error);
         }

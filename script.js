@@ -1502,54 +1502,108 @@ class SpotifyStats {
         let concerts = [];
         
         try {
-            // Première passe : recherche pour tous les artistes
             const allEvents = [];
-            const artistsToProcess = artists.slice(0, 10);
-            console.log(`🔄 Traitement de ${artistsToProcess.length} artistes...`);
+            const artistsToProcess = artists.slice(0, 8); // Limiter pour éviter trop d'appels
+            console.log(`🔄 Recherche d'événements réels pour ${artistsToProcess.length} artistes...`);
             
-            for (const artist of artistsToProcess) { // Limiter le nombre d'artistes pour les liens
-                // Créer des liens directs vers les plateformes de concerts
-                console.log(`🎭 Création de liens de concerts pour ${artist.name}...`);
+            for (const artist of artistsToProcess) {
+                console.log(`🎭 Recherche concerts pour ${artist.name}...`);
                 
-                const concertEvent = {
-                    artistName: artist.name,
-                    artistImage: artist.images[0]?.url,
-                    title: `Rechercher concerts de ${artist.name}`,
-                    venue: 'Recherche sur plateformes',
-                    city: position.city || 'Votre région',
-                    country: position.country || '',
-                    date: 'Dates à venir',
-                    description: `Cliquez sur les liens ci-dessous pour trouver les concerts de ${artist.name} près de chez vous`,
-                    links: [
-                        {
-                            name: 'Bandsintown',
-                            url: `https://www.bandsintown.com/a/${encodeURIComponent(artist.name.toLowerCase().replace(/\s+/g, '-'))}`
-                        },
-                        {
-                            name: 'Songkick',
-                            url: `https://www.songkick.com/search?query=${encodeURIComponent(artist.name)}`
-                        },
-                        {
-                            name: 'Fnac Spectacles',
-                            url: `https://www.fnacspectacles.com/recherche/${encodeURIComponent(artist.name)}`
-                        }
-                    ]
-                };
-                
-                allEvents.push(concertEvent);
-                console.log(`🎤 Liens de concerts créés pour ${artist.name}`);
+                try {
+                    // Essayer d'abord Last.fm (pas besoin de clé API pour les événements)
+                    const lastfmEvents = await this.fetchLastfmEvents(artist.name);
+                    allEvents.push(...lastfmEvents);
+                    
+                    // Attendre un peu entre les appels pour éviter la limitation de débit
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                } catch (error) {
+                    console.warn(`⚠️ Erreur pour ${artist.name}:`, error.message);
+                }
             }
             
-            // Retourner directement les liens de recherche (pas de filtrage géographique sur des liens)
-            concerts = allEvents;
-            console.log(`🎪 ${concerts.length} liens de recherche de concerts créés`);
-            console.log('📋 Premier concert exemple:', concerts[0]);
+            // Filtrer et trier les événements par proximité et date
+            const sortedEvents = this.sortEventsByRelevance(allEvents, position);
+            concerts = this.selectConcertsByProximity(sortedEvents, position);
+            
+            console.log(`🎪 ${concerts.length} concerts réels trouvés`);
+            
+            // Si pas assez de concerts réels, ajouter quelques liens de recherche
+            if (concerts.length < 5) {
+                console.log('🔗 Ajout de liens de recherche complémentaires...');
+                const searchLinks = this.generateSearchLinks(artistsToProcess.slice(0, 3), position);
+                concerts.push(...searchLinks);
+            }
             
         } catch (error) {
             console.error('❌ Erreur récupération concerts:', error);
+            // Fallback vers les liens de recherche
+            concerts = this.generateSearchLinks(artists.slice(0, 5), position);
         }
         
         return concerts;
+    }
+
+    async fetchLastfmEvents(artistName) {
+        const events = [];
+        try {
+            // Last.fm a une API publique pour les événements d'artistes
+            const response = await fetch(
+                `https://ws.audioscrobbler.com/2.0/?method=artist.getevents&artist=${encodeURIComponent(artistName)}&api_key=b25b959554ed76058ac220b7b2e0a026&format=json`
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.events && data.events.event) {
+                    const eventList = Array.isArray(data.events.event) ? data.events.event : [data.events.event];
+                    
+                    for (const event of eventList) {
+                        if (event.venue && event.startDate) {
+                            events.push({
+                                artistName: artistName,
+                                title: event.title || `${artistName} en concert`,
+                                venue: {
+                                    name: event.venue.name,
+                                    city: event.venue.location.city,
+                                    country: event.venue.location.country
+                                },
+                                datetime: event.startDate,
+                                url: event.url,
+                                description: event.description || `Concert de ${artistName}`
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn(`⚠️ Erreur Last.fm pour ${artistName}:`, error.message);
+        }
+        
+        return events;
+    }
+
+    generateSearchLinks(artists, position) {
+        return artists.map(artist => ({
+            artistName: artist.name,
+            artistImage: artist.images[0]?.url,
+            title: `Rechercher concerts de ${artist.name}`,
+            venue: 'Recherche sur plateformes',
+            city: position.city || 'Votre région',
+            country: position.country || '',
+            date: 'Dates à venir',
+            description: `Liens de recherche pour trouver les concerts de ${artist.name}`,
+            links: [
+                {
+                    name: 'Bandsintown',
+                    url: `https://www.bandsintown.com/a/${encodeURIComponent(artist.name.toLowerCase().replace(/\s+/g, '-'))}`
+                },
+                {
+                    name: 'Songkick',
+                    url: `https://www.songkick.com/search?query=${encodeURIComponent(artist.name)}`
+                }
+            ]
+        }));
     }
     
     selectConcertsByProximity(sortedEvents, position) {

@@ -1422,44 +1422,76 @@ class SpotifyStats {
                 return;
             }
             
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    try {
-                        // Récupération de la ville via une API de géocodage inverse
-                        const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=fr`);
-                        const data = await response.json();
+            console.log('🌍 Tentative de géolocalisation...');
+            console.log('🔒 HTTPS:', window.location.protocol === 'https:');
+            
+            // Essayer d'abord avec haute précision, puis fallback
+            const tryGeolocation = (options, attempt = 1) => {
+                console.log(`📍 Tentative ${attempt} avec options:`, options);
+                
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        console.log('✅ Position obtenue:', position.coords);
+                        try {
+                            // Récupération de la ville via une API de géocodage inverse
+                            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=fr`);
+                            const data = await response.json();
+                            console.log('🏠 Géocodage réussi:', data);
+                            
+                            resolve({
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                city: data.city || data.locality || 'Votre ville',
+                                country: data.countryName || 'France'
+                            });
+                        } catch (error) {
+                            console.warn('⚠️ Erreur géocodage:', error);
+                            resolve({
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                city: 'Votre ville',
+                                country: 'France'
+                            });
+                        }
+                    },
+                    (error) => {
+                        console.error(`❌ Tentative ${attempt} échouée:`, {
+                            code: error.code,
+                            message: error.message,
+                            PERMISSION_DENIED: error.code === 1,
+                            POSITION_UNAVAILABLE: error.code === 2,
+                            TIMEOUT: error.code === 3
+                        });
                         
-                        resolve({
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            city: data.city || data.locality || 'Votre ville',
-                            country: data.countryName || 'France'
-                        });
-                    } catch (error) {
-                        resolve({
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            city: 'Votre ville',
-                            country: 'France'
-                        });
-                    }
-                },
-                (error) => {
-                    console.warn('⚠️ Erreur géolocalisation:', error.message, 'Utilisation position par défaut');
-                    // Fallback vers Paris si géolocalisation échoue
-                    resolve({
-                        latitude: 48.8566,
-                        longitude: 2.3522,
-                        city: 'Paris',
-                        country: 'France'
-                    });
-                },
-                {
-                    timeout: 10000,
-                    enableHighAccuracy: false,
-                    maximumAge: 300000
-                }
-            );
+                        if (attempt === 1 && error.code === 2) {
+                            // Réessayer avec des options moins strictes
+                            console.log('🔄 Nouvelle tentative avec options relaxées...');
+                            tryGeolocation({
+                                timeout: 20000,
+                                enableHighAccuracy: false,
+                                maximumAge: 600000
+                            }, 2);
+                        } else {
+                            console.warn('⚠️ Toutes les tentatives ont échoué, utilisation position par défaut');
+                            // Fallback vers Paris si géolocalisation échoue
+                            resolve({
+                                latitude: 48.8566,
+                                longitude: 2.3522,
+                                city: 'Paris',
+                                country: 'France'
+                            });
+                        }
+                    },
+                    options
+                );
+            };
+            
+            // Première tentative avec haute précision
+            tryGeolocation({
+                timeout: 15000,
+                enableHighAccuracy: true,
+                maximumAge: 60000
+            });
         });
     }
 

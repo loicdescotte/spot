@@ -1497,13 +1497,17 @@ class SpotifyStats {
 
     async fetchConcerts(artists, position) {
         console.log('🎤 Recherche de vrais concerts...');
+        console.log('🎭 Artistes reçus:', artists.length);
+        console.log('📍 Position:', position);
         let concerts = [];
         
         try {
             // Première passe : recherche pour tous les artistes
             const allEvents = [];
+            const artistsToProcess = artists.slice(0, 10);
+            console.log(`🔄 Traitement de ${artistsToProcess.length} artistes...`);
             
-            for (const artist of artists.slice(0, 10)) { // Limiter le nombre d'artistes pour les liens
+            for (const artist of artistsToProcess) { // Limiter le nombre d'artistes pour les liens
                 // Créer des liens directs vers les plateformes de concerts
                 console.log(`🎭 Création de liens de concerts pour ${artist.name}...`);
                 
@@ -1539,6 +1543,7 @@ class SpotifyStats {
             // Retourner directement les liens de recherche (pas de filtrage géographique sur des liens)
             concerts = allEvents;
             console.log(`🎪 ${concerts.length} liens de recherche de concerts créés`);
+            console.log('📋 Premier concert exemple:', concerts[0]);
             
         } catch (error) {
             console.error('❌ Erreur récupération concerts:', error);
@@ -1798,11 +1803,12 @@ class SpotifyStats {
         const container = document.getElementById('concerts-list');
         
         if (!concerts || concerts.length === 0) {
+            console.error('❌ Aucun concert/lien généré - debug nécessaire');
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #666;">
-                    <p>🚫 Impossible d'accéder aux données de concerts</p>
+                    <p>🚫 Aucun lien de recherche de concerts généré</p>
                     <p style="font-size: 0.9em; margin: 20px 0;">
-                        Les navigateurs bloquent l'accès aux APIs de concerts depuis localhost pour des raisons de sécurité (CORS).
+                        Il semble qu'il y ait un problème dans la génération des liens de recherche pour vos artistes.
                     </p>
                     <div style="background: rgba(29, 185, 84, 0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
                         <p style="font-size: 0.9em; margin-bottom: 15px;">

@@ -1980,7 +1980,6 @@ class SpotifyStats {
 // Fonctions globales disponibles immédiatement
 window.loginWithSpotify = async function() {
     console.log('🎵 Démarrage de la connexion OAuth Spotify (PKCE flow)...');
-    alert('Bouton de connexion cliqué !'); // Debug temporaire
     
     try {
         // Générer le code verifier et challenge pour PKCE
